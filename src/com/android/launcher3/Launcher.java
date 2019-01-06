@@ -152,6 +152,10 @@ import com.android.launcher3.widget.WidgetListRowEntry;
 import com.android.launcher3.widget.WidgetsFullSheet;
 import com.android.launcher3.widget.custom.CustomWidgetManager;
 
+import com.google.android.libraries.gsa.launcherclient.ClientOptions;
+import com.google.android.libraries.gsa.launcherclient.ClientService;
+import com.google.android.libraries.gsa.launcherclient.LauncherClient;
+
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -1319,6 +1323,14 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
     public void onDetachedFromWindow() {
         super.onDetachedFromWindow();
 
+        if (mFeedIntegrationEnabled) {
+            final LauncherClient client = mLauncherTab.getClient();
+            if (!client.isDestroyed()) {
+                client.getEventInfo().parse(0, "detachedFromWindow", 0.0f);
+                client.setParams(null);
+            }
+        }
+
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onDetachedFromWindow();
         }
@@ -1511,6 +1523,33 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
         TextKeyListener.getInstance().release();
         clearPendingBinds();
         LauncherAppState.getIDP(this).removeOnChangeListener(this);
+
+        if (mFeedIntegrationEnabled) {
+            final LauncherClient launcherClient = mLauncherTab.getClient();
+            if (!launcherClient.isDestroyed()) {
+                launcherClient.getActivity().unregisterReceiver(launcherClient.mInstallListener);
+            }
+            launcherClient.setDestroyed(true);
+            launcherClient.getBaseService().disconnect();
+            if (launcherClient.getOverlayCallback() != null) {
+                launcherClient.getOverlayCallback().mClient = null;
+                launcherClient.getOverlayCallback().mWindowManager = null;
+                launcherClient.getOverlayCallback().mWindow = null;
+                launcherClient.setOverlayCallback(null);
+            }
+            ClientService service = launcherClient.getClientService();
+            LauncherClient client = service.getClient();
+            if (client != null && client.equals(launcherClient)) {
+                service.mWeakReference = null;
+                if (!launcherClient.getActivity().isChangingConfigurations()) {
+                    service.disconnect();
+                    if (ClientService.sInstance == service) {
+                        ClientService.sInstance = null;
+                    }
+                }
+            }
+        }
+
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onDestroy();
         }
@@ -2621,5 +2660,24 @@ public class Launcher extends BaseDraggingActivity implements LauncherExterns,
     public interface OnResumeCallback {
 
         void onLauncherResume();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (SettingsActivity.KEY_FEED_INTEGRATION.equals(key)) {
+            if (mLauncherTab != null) {
+                mFeedIntegrationEnabled = isFeedIntegrationEnabled();
+                ClientOptions clientOptions = new ClientOptions(mFeedIntegrationEnabled ? 1 : 0);
+                final LauncherClient client = mLauncherTab.getClient();
+                if (clientOptions.options != client.mFlags) {
+                    client.mFlags = clientOptions.options;
+                    if (client.getParams() != null) {
+                        client.updateConfiguration();
+                    }
+                    client.getEventInfo().parse("setClientOptions ", client.mFlags);
+                }
+            }
+
+        }
     }
 }
