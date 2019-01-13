@@ -58,7 +58,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Toast;
 
-import com.android.internal.util.du.Utils;
+import com.android.internal.util.candy.CandyUtils;
 
 import com.android.launcher3.Launcher.LauncherOverlay;
 import com.android.launcher3.LauncherAppWidgetHost.ProviderChangedListener;
@@ -328,10 +328,10 @@ public class Workspace extends PagedView<WorkspacePageIndicator>
             case 0: // Stock
                 break;
             case 1: // Screen off
-                Utils.switchScreenOff(getContext());
+                CandyUtils.switchScreenOff(getContext());
                 break;
             case 2: // Flashlight
-                Utils.toggleCameraFlash();
+                CandyUtils.toggleCameraFlash();
                 break;
             case 3: // Google search
                 launchGoogleSearch(getContext());
@@ -3544,7 +3544,7 @@ public class Workspace extends PagedView<WorkspacePageIndicator>
         launchIntent.setPackage("com.google.android.googlequicksearchbox");
         launchIntent.setClassName("com.google.android.googlequicksearchbox",
                 "com.google.android.googlequicksearchbox.SearchActivity");
-        if (Utils.isPackageInstalled(context,
+        if (CandyUtils.isPackageInstalled(context,
                 "com.google.android.googlequicksearchbox")) {
             context.startActivity(launchIntent);
         } else {
