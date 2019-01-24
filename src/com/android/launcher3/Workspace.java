@@ -343,19 +343,19 @@ public class Workspace extends PagedView<WorkspacePageIndicator>
                 launchGoogleSearch(getContext());
                 break;
             case 4: // Volume panel
-                Utils.toggleVolumePanel(getContext());
+                CandyUtils.toggleVolumePanel(getContext());
                 break;
             case 5: // Clear notifications
-                Utils.clearAllNotifications();
+                CandyUtils.clearAllNotifications();
                 break;
             case 6: // Screenshot
-                Utils.takeScreenshot(true);
+                CandyUtils.takeScreenshot(true);
                 break;
             case 7: // Notifications
-                Utils.toggleNotifications();
+                CandyUtils.toggleNotifications();
                 break;
             case 8: // QS panel
-                Utils.toggleQsPanel();
+                CandyUtils.toggleQsPanel();
                 break;
         }
     }
