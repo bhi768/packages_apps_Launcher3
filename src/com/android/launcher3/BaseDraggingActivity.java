@@ -16,22 +16,30 @@
 
 package com.android.launcher3;
 
+import android.app.ActivityManager;
 import android.app.ActivityOptions;
 import android.app.UiModeManager;
+import android.app.WallpaperManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.om.IOverlayManager;
+import android.content.om.OverlayInfo;
 import android.content.res.Configuration;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Process;
+import android.os.RemoteException;
+import android.os.ServiceManager;
 import android.os.StrictMode;
 import android.os.UserHandle;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.View;
 import android.widget.Toast;
+
+import com.android.internal.statusbar.ThemeAccentUtils;
 
 import com.android.launcher3.LauncherSettings.Favorites;
 import com.android.launcher3.badge.BadgeInfo;
@@ -67,6 +75,13 @@ public abstract class BaseDraggingActivity extends BaseActivity
     private DisplayRotationListener mRotationListener;
 
     private UiModeManager mUiModeManager;
+
+    private IOverlayManager mOverlayManager = IOverlayManager.Stub.asInterface(
+                ServiceManager.getService(Context.OVERLAY_SERVICE));
+
+    private int mCurrentUserId = ActivityManager.getCurrentUser();
+
+    private boolean usingDarkOrBlackThemeAccent = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -280,8 +295,26 @@ public abstract class BaseDraggingActivity extends BaseActivity
 
     private void updateTheme(WallpaperColorInfo wallpaperColorInfo) {
         final Configuration config = this.getResources().getConfiguration();
-        final boolean nightModeWantsDarkTheme = (config.uiMode & Configuration.UI_MODE_NIGHT_MASK)
-                == Configuration.UI_MODE_NIGHT_YES;
+
+        OverlayInfo themeInfo = null;
+        try {
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.dark", mCurrentUserId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        final boolean usingDarkThemeAccent = themeInfo != null && themeInfo.isEnabled();
+
+        themeInfo = null;
+        try {
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.black", mCurrentUserId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        final boolean usingBlackThemeAccent = themeInfo != null && themeInfo.isEnabled();
+
+        final boolean nightModeWantsDarkTheme = (((config.uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                == Configuration.UI_MODE_NIGHT_YES) || usingDarkThemeAccent || usingBlackThemeAccent);
+
         if (nightModeWantsDarkTheme) {
             setTheme(wallpaperColorInfo.supportsDarkText() ? R.style.AppTheme_Dark_DarkText :
                     R.style.AppTheme_Dark);

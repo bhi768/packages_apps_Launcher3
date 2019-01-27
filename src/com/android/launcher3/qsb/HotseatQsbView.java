@@ -17,6 +17,8 @@ package com.android.launcher3.qsb;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.app.ActivityManager;
+import android.app.WallpaperManager;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -24,6 +26,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.om.IOverlayManager;
+import android.content.om.OverlayInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -31,12 +35,17 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Process;
+import android.os.RemoteException;
+import android.os.ServiceManager;
+import android.os.UserHandle;
 import android.support.v4.graphics.ColorUtils;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
+
+import com.android.internal.statusbar.ThemeAccentUtils;
 
 import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherCallbacks;
@@ -59,6 +68,13 @@ public class HotseatQsbView extends BaseQsbView {
 
     public Context mContext;
     private QsbConfiguration mQsbConfig;
+
+    private IOverlayManager mOverlayManager = IOverlayManager.Stub.asInterface(
+                ServiceManager.getService(Context.OVERLAY_SERVICE));
+
+    private int mCurrentUserId = ActivityManager.getCurrentUser();
+
+    private boolean usingDarkOrBlackThemeAccent = false;
 
     public HotseatQsbView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -88,8 +104,6 @@ public class HotseatQsbView extends BaseQsbView {
             reinflateViews();
         }
     }
-
-
 
     @Override
     public void onAttachedToWindow() {
@@ -123,8 +137,26 @@ public class HotseatQsbView extends BaseQsbView {
 
     public void loadViews() {
         final Configuration config = mContext.getResources().getConfiguration();
-        final boolean nightModeWantsDarkTheme = (config.uiMode & Configuration.UI_MODE_NIGHT_MASK)
-                == Configuration.UI_MODE_NIGHT_YES;
+
+                OverlayInfo themeInfo = null;
+        try {
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.dark", mCurrentUserId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        final boolean usingDarkThemeAccent = themeInfo != null && themeInfo.isEnabled();
+
+        themeInfo = null;
+        try {
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.black", mCurrentUserId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        final boolean usingBlackThemeAccent = themeInfo != null && themeInfo.isEnabled();
+
+        final boolean nightModeWantsDarkTheme = (((config.uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                == Configuration.UI_MODE_NIGHT_YES) || usingDarkThemeAccent || usingBlackThemeAccent);
+
         View.inflate(new ContextThemeWrapper(getContext(), R.style.HotseatQsbTheme), R.layout.qsb_hotseat_content, this);
         setColor(nightModeWantsDarkTheme ? 0xD9282828 : 0xCCFFFFFF);
         setColorAlpha(ColorUtils.setAlphaComponent(mColor, mQsbConfig.getMicOpacity()));
