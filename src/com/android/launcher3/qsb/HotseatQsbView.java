@@ -140,7 +140,7 @@ public class HotseatQsbView extends BaseQsbView {
 
                 OverlayInfo themeInfo = null;
         try {
-            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.dark", mCurrentUserId);
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.system.theme.dark", mCurrentUserId);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -148,7 +148,7 @@ public class HotseatQsbView extends BaseQsbView {
 
         themeInfo = null;
         try {
-            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.black", mCurrentUserId);
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.system.theme.black", mCurrentUserId);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

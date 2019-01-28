@@ -15,11 +15,14 @@
  */
 package com.android.launcher3.qsb;
 
+import android.app.ActivityManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.om.IOverlayManager;
+import android.content.om.OverlayInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -32,6 +35,8 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.support.v4.content.ContextCompat;
+import android.os.RemoteException;
+import android.os.ServiceManager;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextUtils.TruncateAt;
@@ -46,6 +51,8 @@ import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.android.internal.statusbar.ThemeAccentUtils;
 
 import com.android.launcher3.Launcher;
 import com.android.launcher3.LauncherCallbacks;
@@ -98,6 +105,13 @@ public abstract class BaseQsbView extends FrameLayout implements OnClickListener
 
     public abstract void startSearch(String initialQuery, int result);
 
+    private IOverlayManager mOverlayManager = IOverlayManager.Stub.asInterface(
+                ServiceManager.getService(Context.OVERLAY_SERVICE));
+
+    private int mCurrentUserId = ActivityManager.getCurrentUser();
+
+    private boolean usingDarkOrBlackThemeAccent = false;
+
     public BaseQsbView(Context context, AttributeSet attributeSet, int i) {
         super(context, attributeSet, i);
         mResult = 0;
@@ -126,8 +140,28 @@ public abstract class BaseQsbView extends FrameLayout implements OnClickListener
         updateTheme(wallpaperColorInfo);
     }
 
+    public boolean usingDarkThemeAccent() {
+        OverlayInfo themeInfo = null;
+        try {
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.dark", mCurrentUserId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        return themeInfo != null && themeInfo.isEnabled();
+    }
+
+    public boolean usingBlackThemeAccent() {
+        OverlayInfo themeInfo = null;
+        try {
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.black", mCurrentUserId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        return themeInfo != null && themeInfo.isEnabled();
+    }
+
     protected int getThemeRes(WallpaperColorInfo wallpaperColorInfo) {
-        if (wallpaperColorInfo.isDark()) {
+        if (wallpaperColorInfo.isDark() || usingDarkThemeAccent() || usingBlackThemeAccent()) {
             return wallpaperColorInfo.supportsDarkText() ?
                     R.style.AppTheme_Dark_DarkText : R.style.AppTheme_Dark;
         } else {
@@ -324,7 +358,7 @@ public abstract class BaseQsbView extends FrameLayout implements OnClickListener
         Builder builder = new Builder(color);
         builder.shadowBlur = shadowBlur;
         builder.keyShadowDistance = keyShadowDistance;
-        if (mIsMainColorDark) {
+        if (mIsMainColorDark || usingDarkThemeAccent() || usingBlackThemeAccent()) {
             builder.ambientShadowAlpha = (int) (((float) builder.ambientShadowAlpha) * 2.8E-45f);
         }
         builder.keyShadowAlpha = builder.ambientShadowAlpha;

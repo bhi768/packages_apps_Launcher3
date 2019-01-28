@@ -298,7 +298,7 @@ public abstract class BaseDraggingActivity extends BaseActivity
 
         OverlayInfo themeInfo = null;
         try {
-            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.dark", mCurrentUserId);
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.system.theme.dark", mCurrentUserId);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -306,7 +306,7 @@ public abstract class BaseDraggingActivity extends BaseActivity
 
         themeInfo = null;
         try {
-            themeInfo = mOverlayManager.getOverlayInfo("com.android.systemui.theme.black", mCurrentUserId);
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.system.theme.black", mCurrentUserId);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

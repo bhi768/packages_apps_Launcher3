@@ -15,13 +15,19 @@
  */
 package com.android.launcher3.qsb;
 
+import android.app.ActivityManager;
+
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.om.IOverlayManager;
+import android.content.om.OverlayInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.RemoteException;
+import android.os.ServiceManager;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.OnScrollListener;
@@ -50,6 +56,7 @@ import com.android.launcher3.qsb.configs.QsbConfiguration;
 import com.android.launcher3.qsb.search.DefaultSearchView;
 import com.android.launcher3.search.SearchThread;
 
+import com.android.internal.statusbar.ThemeAccentUtils;
 import com.android.internal.util.candy.CandyUtils;
 
 public class AllAppsQsbView extends BaseQsbView implements SearchUiManager, OnChangeListener {
@@ -65,6 +72,11 @@ public class AllAppsQsbView extends BaseQsbView implements SearchUiManager, OnCh
     public TextView mHint;
     public int mShadowAlpha;
     public boolean mUseDefaultSearch;
+
+    private IOverlayManager mOverlayManager = IOverlayManager.Stub.asInterface(
+                ServiceManager.getService(Context.OVERLAY_SERVICE));
+    private int mCurrentUserId = ActivityManager.getCurrentUser();
+    private boolean usingDarkOrBlackThemeAccent = false;
 
     public AllAppsQsbView(Context context, AttributeSet attributeSet) {
         this(context, attributeSet, 0);
@@ -116,8 +128,26 @@ public class AllAppsQsbView extends BaseQsbView implements SearchUiManager, OnCh
     @Override
     public void onExtractedColorsChanged(WallpaperColorInfo wallpaperColorInfo) {
         final Configuration config = mContext.getResources().getConfiguration();
-        final boolean nightModeWantsDarkTheme = (config.uiMode & Configuration.UI_MODE_NIGHT_MASK)
-                == Configuration.UI_MODE_NIGHT_YES;
+
+        OverlayInfo themeInfo = null;
+        try {
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.system.theme.dark", mCurrentUserId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        final boolean usingDarkThemeAccent = themeInfo != null && themeInfo.isEnabled();
+
+        themeInfo = null;
+        try {
+            themeInfo = mOverlayManager.getOverlayInfo("com.android.system.theme.black", mCurrentUserId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        final boolean usingBlackThemeAccent = themeInfo != null && themeInfo.isEnabled();
+
+        final boolean nightModeWantsDarkTheme = (((config.uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                == Configuration.UI_MODE_NIGHT_YES) || usingDarkThemeAccent || usingBlackThemeAccent);
+
         setColor(ColorUtils.compositeColors(
                 ColorUtils.compositeColors(nightModeWantsDarkTheme ? 0xD9282828 : 0xCCFFFFFF, Themes.getAttrColor(mLauncher, R.attr.allAppsScrimColor)),
                 wallpaperColorInfo.getMainColor()));
