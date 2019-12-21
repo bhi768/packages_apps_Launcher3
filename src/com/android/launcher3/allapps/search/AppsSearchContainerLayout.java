@@ -107,14 +107,6 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         }
     }
 
-    private Launcher tryGetLauncher(Context context) {
-        try {
-            return Launcher.getLauncher(context);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
-
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
