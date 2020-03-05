@@ -168,7 +168,12 @@
         <activity
             android:name="com.android.launcher3.settings.SettingsActivity"
             android:label="@string/settings_button_text"
+<<<<<<< HEAD
             android:theme="@android:style/Theme.DeviceDefault.Settings"
+=======
+            android:theme="@style/HomeSettingsTheme"
+            android:parentActivityName="com.android.launcher3.Launcher"
+>>>>>>> 4c9060750... Merge tag 'android-10.0.0_r31' of https://android.googlesource.com/platform/packages/apps/Launcher3 into HEAD
             android:autoRemoveFromRecents="true">
             <intent-filter>
                 <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
