@@ -25,6 +25,7 @@ import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.util.Log;
+import com.android.launcher3.Utilities;
 
 import java.util.function.Consumer;
 
@@ -70,6 +71,7 @@ public class ConfigMonitor extends BroadcastReceiver implements
 
         // Listen for configuration change
         mContext.registerReceiver(this, new IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED));
+        Utilities.getPrefs(mContext).registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -115,6 +117,7 @@ public class ConfigMonitor extends BroadcastReceiver implements
             mContext.unregisterReceiver(this);
             DefaultDisplay display = DefaultDisplay.INSTANCE.get(mContext);
             display.removeChangeListener(this);
+            Utilities.getPrefs(mContext).unregisterOnSharedPreferenceChangeListener(this);
         } catch (Exception e) {
             Log.e(TAG, "Failed to unregister config monitor", e);
         }

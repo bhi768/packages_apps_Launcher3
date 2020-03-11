@@ -293,6 +293,7 @@ public class InvariantDeviceProfile {
 
         iconSize = displayOption.iconSize;
         iconShapePath = getIconShapePath(context);
+        iconPack = IconPackProvider.getCurrentIconPack(context);
         landscapeIconSize = displayOption.landscapeIconSize;
         iconBitmapSize = ResourceUtils.pxFromDp(iconSize, metrics);
         iconTextSize = displayOption.iconTextSize;
